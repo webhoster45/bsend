@@ -14,6 +14,13 @@ app.use(express.urlencoded({extended:true}))
 app.use(express.static('/public'))
 
 
+const userschema=new Schema({
+  name:{type:String,required:true},
+  password:{type:String, required:true}
+})
+
+const User=mongoose.model("User",userschema)
+
 mongoose.connect(MONGODB_URL)
 .then(
 ()=>{
@@ -38,7 +45,9 @@ jwt.verify(token, JWT_SECRET, (err,decoded)=>{
 }
 
 app.post('/register',(req,res)=>{
-    const {username , password}
+    const {username , password}=req.body;
+    if(!username||!password) return res.status(401).json({message:"Invalid credentials"});
+    
 })
 app.post('/login',(req,res))
 
@@ -47,4 +56,3 @@ app.use((req,res)=>{
 })
 
 
-//install bycrpt express-rate-limiter 
