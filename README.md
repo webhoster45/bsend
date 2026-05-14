@@ -1,1 +1,1 @@
-This is the second version of pimit , this will be using redis for storing and also have extra added features
+Bible Api With rate-limiter.
