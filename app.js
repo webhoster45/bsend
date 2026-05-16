@@ -28,10 +28,8 @@ mongoose.connect(MONGODB_URL)
 app.listen(PORT,console.log(`App running on ${PORT}}`))})
 .catch((err)=>console.log(err));
 
-const limiter=()=>{
-    Windowms:15*60;
-    limit:5
-}
+
+//--------------------------UNTESTED CODE---------------------------------------
 const authmiddleware=(req,res,next)=>{
 const authheader=req.headers.authorization;
 if(authheader)return res.status(401)
@@ -44,12 +42,37 @@ jwt.verify(token, JWT_SECRET, (err,decoded)=>{
 })
 }
 
-app.post('/register',(req,res)=>{
+app.post('/register',async (req,res)=>{
+try {
     const {username , password}=req.body;
-    if(!username||!password) return res.status(401).json({message:"Invalid credentials"});
+    const validatename=username.trim().toLowerCase()
+    if(!validatename||!password) return res.status(401).json({message:"All params must be filled"});
+    const existinguser=User.findOne({username:validatename});
+    if(existinguser) return res.status(409).json({message:"User already exists"})
+    const hashedpassword=await bcrypt.hash(password,10)
+    await User.create({username:validatename,password:hashedpassword});
+    const token=jwt.sign({username},JWT_SECRET)
+    return res.status(200).json({message:`User "${validatename}" created.`,token})
+} catch (err) {
+  return res.status(500).json({err})
+}
     
 })
-app.post('/login',(req,res))
+app.post('/login',async (req,res)=>{
+try {
+        const {username, password}=req.body;
+    const validatename=username.trim().toLowerCase();
+    if(!validatename||!password) return res.status(401).json({message:"All params must be filled"});
+    const user=User.findOne({username:validatename});
+    if(!user) return res.status(400).json({message:"User doesn't exist"})
+    const compare=bcrypt.compare(password||user.password);
+    if(!compare) return res.status(400).json({message:"Invalid credentials"});
+    const token=jwt.sign({username},JWT_SECRET)
+    return res.status(200).json({message:`Welcome back, "${validatename}"`,token})
+} catch (err) {
+ return res.status(500).json({err})   
+}
+})
 
 app.use((req,res)=>{
     res.status(404).json({message:"This route doesn't exist"})
