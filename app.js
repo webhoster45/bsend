@@ -19,15 +19,22 @@ app.use(express.static('/public'))
 const userschema=new Schema({
   name:{type:String,required:true},
   password:{type:String, required:true}
-})
+},{timestamps:true})
 
-const User=mongoose.model("User",userschema)
+const passage=new Schema({
+  passage:{type:String , required:true},
+  reading:{type:String , required:true}
+},{timesstamps:true})
+
+
+const User=mongoose.model("User",userschema);
+const Passage=mongoose.model("Passage",passage);
 
 mongoose.connect(MONGODB_URL)
 .then(
 ()=>{
     console.log("Mongodb connected");
-app.listen(PORT,console.log(`App running on ${PORT}}`))})
+app.listen(PORT,console.log(`App running on ${PORT}`))})
 .catch((err)=>console.log(err));
 
 
@@ -72,8 +79,23 @@ try {
     const token=jwt.sign({username},JWT_SECRET)
     return res.status(200).json({message:`Welcome back, "${validatename}"`,token})
 } catch (err) {
- return res.status(500).json({err})   
+        console.log(err)
+        return res.status(500).json({err})
 }
+})
+
+
+app.post('/import',authmiddleware, async(req,res)=>{
+    try{
+const {passage,reading}=req.body;
+const existingpassage=await Passage.findOne({passage:passage});
+if(existingpassage) return res.status(409).json({message:"Passage already exists"});
+await Passage.create({passage,reading});
+    }
+    catch(err){
+        console.log(err)
+        return res.status(500).json({err})
+    }
 })
 
 app.use((req,res)=>{
